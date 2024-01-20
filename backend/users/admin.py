@@ -4,6 +4,14 @@ from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser
 
 
-UserAdmin.fieldsets += (('Extra Fields', {'fields': ('role',)}),)
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = (
+        'email',
+        'username',
+        'first_name',
+        'last_name',
+    )
+    list_filter = ('email', 'username')
 
-admin.site.register(CustomUser, UserAdmin)
+
+admin.site.register(CustomUser, CustomUserAdmin)
