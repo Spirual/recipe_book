@@ -3,7 +3,7 @@ from django.core.files.base import ContentFile
 import base64
 from rest_framework import serializers
 
-from recipes.models import Tag
+from recipes.models import Tag, Ingredient
 
 
 class Hex2NameColor(serializers.Field):
@@ -36,3 +36,9 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = ('id', 'name', 'color', 'slug')
 
+
+class IngredientSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Ingredient
+        fields = ('id', 'name', 'measurement_unit')
