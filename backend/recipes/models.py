@@ -119,14 +119,14 @@ class Subscription(models.Model):
     subscriber = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='subscribers',
+        related_name='subscribes',
         verbose_name='Подписчик',
     )
-    user = models.ForeignKey(
+    author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='authors',
-        verbose_name='Пользователь',
+        related_name='subscribers',
+        verbose_name='Автор',
     )
 
     class Meta:
@@ -134,17 +134,17 @@ class Subscription(models.Model):
         verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'subscriber'],
-                name='unique_user_subscriber',
+                fields=['author', 'subscriber'],
+                name='unique_author_subscriber',
             ),
             models.CheckConstraint(
-                check=~Q(user=F('subscriber')),
+                check=~Q(author=F('subscriber')),
                 name='check_self_subscriber',
             ),
         ]
 
     def __str__(self):
-        return f"{self.subscriber} подписался на {self.user}."
+        return f"Подписка {self.subscriber} на {self.author}."
 
 
 class Favorite(models.Model):
