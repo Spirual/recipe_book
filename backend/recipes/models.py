@@ -100,7 +100,7 @@ class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='recipe_ingredients',
+        related_name='ingredients',
         verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
@@ -108,7 +108,7 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Ингридиент'
     )
-    quantity = models.FloatField(verbose_name='Количество')
+    amount = models.FloatField(verbose_name='Количество')
 
     class Meta:
         verbose_name = 'Ингридиенты в рецепте'

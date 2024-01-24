@@ -1,9 +1,10 @@
-from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 
-from api.serializers import TagSerializer, IngredientSerializer
-from recipes.models import Tag, Ingredient
+from api.serializers import TagSerializer, IngredientSerializer, \
+    RecipeSerializer
+from recipes.models import Tag, Ingredient, Recipe
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -18,3 +19,9 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     pagination_class = None
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+
+
+class RecipeViewSet(ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+
