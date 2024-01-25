@@ -2,6 +2,10 @@ import webcolors
 from django.core.files.base import ContentFile
 import base64
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from rest_framework.fields import CurrentUserDefault, HiddenField, IntegerField
+from rest_framework.relations import PrimaryKeyRelatedField
+from rest_framework.serializers import Serializer
 
 from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
 from users.serializers import CustomUserSerializer
@@ -64,7 +68,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         return obj.ingredient.measurement_unit
 
 
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeReadSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
     tags = TagSerializer(many=True, read_only=True)
     author = CustomUserSerializer(read_only=True)
@@ -95,3 +99,70 @@ class RecipeSerializer(serializers.ModelSerializer):
         current_user = self.context['request'].user
         return current_user.shopping_list.filter(recipe=obj).exists()
 
+
+class WriteRecipeIngredientSerializer(Serializer):
+    id = IntegerField()
+    amount = IntegerField()
+
+
+class RecipeWriteSerializer(serializers.ModelSerializer):
+    image = Base64ImageField(required=False, allow_null=True)
+    ingredients = WriteRecipeIngredientSerializer(many=True)
+    tags = PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'tags',
+            'ingredients',
+            'name',
+            'image',
+            'text',
+            'cooking_time',
+        )
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        return RecipeReadSerializer(
+            instance,
+            context={'request': request}
+        ).data
+
+    def create(self, validated_data):
+        ingredients = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
+        if not ingredients:
+            raise ValidationError({
+                'ingredients': 'Рецепт не может быть без ингредиентов!'
+            })
+        recipe = Recipe.objects.create(
+            **validated_data,
+        )
+        recipe.tags.set(tags)
+        for ingredient in ingredients:
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient_id=ingredient['id'],
+                amount=ingredient['amount'],
+            )
+        return recipe
+
+    def update(self, instance, validated_data):
+        instance.tags.set(validated_data.get('tags', instance.tags.all()))
+        instance.name = validated_data.get("name", instance.name)
+        instance.image = validated_data.get("image", instance.image)
+        instance.text = validated_data.get("text", instance.text)
+        instance.cooking_time = validated_data.get("cooking_time", instance.cooking_time)
+        instance.save()
+
+        ingredients = validated_data.get('ingredients')
+        if ingredients:
+            instance.ingredients.all().delete()
+            for ingredient in ingredients:
+                RecipeIngredient.objects.create(
+                    recipe=instance,
+                    ingredient_id=ingredient['id'],
+                    amount=ingredient['amount'],
+                )
+        return instance

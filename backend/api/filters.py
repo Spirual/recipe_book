@@ -1,5 +1,6 @@
-from django_filters import CharFilter, NumberFilter, BooleanFilter
+from django_filters import CharFilter, NumberFilter
 from django_filters.rest_framework import FilterSet
+from rest_framework.filters import SearchFilter
 
 from recipes.models import Recipe, Tag
 
@@ -45,3 +46,7 @@ class RecipesFilterBackend(FilterSet):
             )
 
         return queryset
+
+
+class IngredientFilter(SearchFilter):
+    search_param = 'name'
