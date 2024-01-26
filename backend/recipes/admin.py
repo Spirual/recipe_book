@@ -36,9 +36,13 @@ class RecipeAdmin(admin.ModelAdmin):
     favorite_count.short_description = 'В избранном'
 
     def show_image(self, obj):
-        return format_html(
-            f'<img src="{obj.image.url}" style="max-height: 100px;">'
-        )
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height: 100px;" />',
+                obj.image.url,
+            )
+        else:
+            return 'Нет изображения'
 
     show_image.short_description = 'Изображение'
 
