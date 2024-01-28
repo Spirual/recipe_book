@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
@@ -14,13 +16,15 @@ from api.pagination import PageLimitPagination
 from api.permissions import IsAuthorOrReadOnlyPermission
 from api.serializers import TagSerializer, IngredientSerializer, \
     RecipeWriteSerializer, RecipeReadSerializer, FavoriteSerializer, \
-    SubscribedUserSerializer
-from recipes.models import Tag, Ingredient, Recipe, Favorite, Subscription
+    SubscribedUserSerializer, ShortRecipeSerializer
+from recipes.models import Tag, Ingredient, Recipe, Favorite, Subscription, \
+    ShoppingList
 
 User = get_user_model()
 
 
 class TagViewSet(ReadOnlyModelViewSet):
+    permission_classes = (IsAuthorOrReadOnlyPermission,)
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
@@ -67,9 +71,63 @@ class RecipeViewSet(ModelViewSet):
             data = {'errors': 'Рецепт отсутствует в избранном.'}
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
 
+    @action(detail=False, permission_classes=[IsAuthenticated])
+    def download_shopping_cart(self, request):
+        user = request.user
+        shopping_list = user.shopping_list.all()
+
+        aggregated_shopping_list = {}
+        for shopping_item in shopping_list:
+            for recipe_ingredient in shopping_item.recipe.ingredients.all():
+                ingredient_name = recipe_ingredient.ingredient.name
+                if ingredient_name in aggregated_shopping_list:
+                    aggregated_shopping_list[ingredient_name][
+                        'amount'] += recipe_ingredient.amount
+                else:
+                    aggregated_shopping_list[ingredient_name] = {
+                        'amount': recipe_ingredient.amount,
+                        'measurement_unit': recipe_ingredient.ingredient.measurement_unit,
+                    }
+
+        context = {'shopping_list': aggregated_shopping_list}
+
+        shopping_cart_text = render_to_string('shopping_list.txt', context)
+
+        response = HttpResponse(shopping_cart_text, content_type='text/plain')
+        response[
+            'Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
+
+        return response
+
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated],
+    )
+    def shopping_cart(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        user = request.user
+        if request.method == 'POST':
+            shopping_list = ShoppingList.objects.create(
+                recipe=recipe,
+                user=user,
+            )
+            serializer = ShortRecipeSerializer(shopping_list.recipe)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        elif request.method == 'DELETE':
+            shopping_list = ShoppingList.objects.filter(
+                recipe=recipe,
+                user=user,
+            )
+            if shopping_list.exists():
+                shopping_list.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            data = {'errors': 'Рецепт отсутствует в списке покупок.'}
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
+
 
 class SubscriptionsViewSet(ModelViewSet):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthorOrReadOnlyPermission,)
     serializer_class = SubscribedUserSerializer
     pagination_class = PageLimitPagination
 
@@ -78,7 +136,7 @@ class SubscriptionsViewSet(ModelViewSet):
 
 
 class AddOrDeleteSubscription(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthorOrReadOnlyPermission,)
 
     def post(self, request, pk):
         author = get_object_or_404(User, pk=pk)
