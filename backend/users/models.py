@@ -20,10 +20,11 @@ class CustomUser(AbstractUser):
         validators=[
             RegexValidator(
                 regex=r'^[\w.@+-]+$',
-                message=('Используются недопустимые '
-                         'символы в имени пользователя')
+                message=(
+                    'Используются недопустимые ' 'символы в имени пользователя'
+                ),
             )
-        ]
+        ],
     )
     first_name = models.CharField(
         'Имя',

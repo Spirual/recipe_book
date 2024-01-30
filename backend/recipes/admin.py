@@ -1,15 +1,19 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient, \
-    Subscription, Favorite, ShoppingList
+from recipes.models import (
+    Tag,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    Subscription,
+    Favorite,
+    ShoppingList,
+)
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'measurement_unit'
-    )
+    list_display = ('name', 'measurement_unit')
     search_fields = ('name',)
 
 

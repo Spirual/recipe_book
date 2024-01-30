@@ -1,0 +1,14 @@
+[tool.ruff]
+target-version = "py311"
+exclude = [
+    ".git",
+    ".venv",
+    "tests",
+    ".github"
+]
+
+line-length = 79
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "single"

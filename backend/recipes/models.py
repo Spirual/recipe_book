@@ -12,7 +12,7 @@ class Tag(models.Model):
     name = models.CharField(
         verbose_name='Название',
         unique=True,
-        max_length=settings.CHAR_FIELD_MAX_LENGTH
+        max_length=settings.CHAR_FIELD_MAX_LENGTH,
     )
     color = models.CharField(
         verbose_name='Цветовой HEX-код',
@@ -21,9 +21,9 @@ class Tag(models.Model):
         validators=[
             RegexValidator(
                 regex=r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$',
-                message='Введенное значение не является цветом в формате HEX!'
+                message='Введенное значение не является цветом в формате HEX!',
             )
-        ]
+        ],
     )
     slug = models.SlugField(
         verbose_name='Уникальный слаг',
@@ -54,7 +54,7 @@ class Ingredient(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return f"{self.name} [{self.measurement_unit}]"
+        return f'{self.name} [{self.measurement_unit}]'
 
 
 class Recipe(models.Model):
@@ -86,9 +86,11 @@ class Recipe(models.Model):
             MinValueValidator(
                 limit_value=settings.VALIDATE_MIN_VALUE,
                 message=(
-                    ('Время приготовления не может быть меньше'
-                     f' {settings.VALIDATE_MIN_VALUE} минуты'),
-                )
+                    (
+                        'Время приготовления не может быть меньше'
+                        f' {settings.VALIDATE_MIN_VALUE} минуты'
+                    ),
+                ),
             ),
         ],
     )
@@ -111,22 +113,22 @@ class RecipeIngredient(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         related_name='ingredients',
-        verbose_name='Рецепт'
+        verbose_name='Рецепт',
     )
     ingredient = models.ForeignKey(
-        Ingredient,
-        on_delete=models.CASCADE,
-        verbose_name='Ингридиент'
+        Ingredient, on_delete=models.CASCADE, verbose_name='Ингридиент'
     )
     amount = models.FloatField(
         verbose_name='Количество',
         validators=[
             MinValueValidator(
                 limit_value=settings.VALIDATE_MIN_VALUE,
-                message=((
-                    'Количество ингридиентов не может '
-                    f'быть меньше {settings.VALIDATE_MIN_VALUE}'),
-                )
+                message=(
+                    (
+                        'Количество ингридиентов не может '
+                        f'быть меньше {settings.VALIDATE_MIN_VALUE}'
+                    ),
+                ),
             ),
         ],
     )
@@ -165,7 +167,7 @@ class Subscription(models.Model):
         ]
 
     def __str__(self):
-        return f"Подписка {self.subscriber} на {self.author}."
+        return f'Подписка {self.subscriber} на {self.author}.'
 
 
 class Favorite(models.Model):
@@ -174,7 +176,6 @@ class Favorite(models.Model):
         on_delete=models.CASCADE,
         related_name='favorites',
         verbose_name='Пользователь',
-
     )
     recipe = models.ForeignKey(
         Recipe,

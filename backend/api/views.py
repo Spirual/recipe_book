@@ -14,11 +14,23 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from api.filters import RecipesFilterBackend, IngredientFilter
 from api.pagination import PageLimitPagination
 from api.permissions import IsAuthorOrReadOnlyPermission
-from api.serializers import TagSerializer, IngredientSerializer, \
-    RecipeWriteSerializer, RecipeReadSerializer, FavoriteSerializer, \
-    SubscribedUserSerializer, ShortRecipeSerializer
-from recipes.models import Tag, Ingredient, Recipe, Favorite, Subscription, \
-    ShoppingList
+from api.serializers import (
+    TagSerializer,
+    IngredientSerializer,
+    RecipeWriteSerializer,
+    RecipeReadSerializer,
+    FavoriteSerializer,
+    SubscribedUserSerializer,
+    ShortRecipeSerializer,
+)
+from recipes.models import (
+    Tag,
+    Ingredient,
+    Recipe,
+    Favorite,
+    Subscription,
+    ShoppingList,
+)
 
 User = get_user_model()
 
@@ -102,7 +114,8 @@ class RecipeViewSet(ModelViewSet):
                 ingredient_name = recipe_ingredient.ingredient.name
                 if ingredient_name in aggregated_shopping_list:
                     aggregated_shopping_list[ingredient_name][
-                        'amount'] += recipe_ingredient.amount
+                        'amount'
+                    ] += recipe_ingredient.amount
                 else:
                     aggregated_shopping_list[ingredient_name] = {
                         'amount': recipe_ingredient.amount,
@@ -115,7 +128,8 @@ class RecipeViewSet(ModelViewSet):
 
         response = HttpResponse(shopping_cart_text, content_type='text/plain')
         response[
-            'Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
+            'Content-Disposition'
+        ] = 'attachment; filename="shopping_list.txt"'
 
         return response
 
