@@ -5,7 +5,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
-
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -119,7 +118,8 @@ class RecipeViewSet(ModelViewSet):
                 else:
                     aggregated_shopping_list[ingredient_name] = {
                         'amount': recipe_ingredient.amount,
-                        'measurement_unit': recipe_ingredient.ingredient.measurement_unit,
+                        'measurement_unit':
+                            recipe_ingredient.ingredient.measurement_unit,
                     }
 
         context = {'shopping_list': aggregated_shopping_list}

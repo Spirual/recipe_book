@@ -2,7 +2,7 @@ from django_filters import CharFilter, NumberFilter
 from django_filters.rest_framework import FilterSet
 from rest_framework.filters import SearchFilter
 
-from recipes.models import Recipe, Tag
+from recipes.models import Recipe
 
 
 class RecipesFilterBackend(FilterSet):

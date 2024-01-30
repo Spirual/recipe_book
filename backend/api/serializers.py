@@ -1,14 +1,11 @@
+import base64
+
 import webcolors
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-import base64
-
-from djoser.serializers import UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import (
-    CurrentUserDefault,
-    HiddenField,
     IntegerField,
     SerializerMethodField,
     CharField,
@@ -196,7 +193,8 @@ class RecipeWriteSerializer(ModelSerializer):
                 raise ValidationError(
                     {
                         'amount': (
-                            f'Кол-во ингридиента {db_ingredient.name} меньше 1.'
+                            (f'Кол-во ингридиента {db_ingredient.name} '
+                             'меньше 1.')
                         )
                     }
                 )
@@ -262,7 +260,8 @@ class RecipeWriteSerializer(ModelSerializer):
                 raise ValidationError(
                     {
                         'amount': (
-                            f'Кол-во ингридиента {db_ingredient.name} меньше 1.'
+                            (f'Кол-во ингридиента {db_ingredient.name} '
+                             'меньше 1.')
                         )
                     }
                 )
