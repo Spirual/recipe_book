@@ -3,7 +3,7 @@ name: Main Foodgram workflow
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build_and_push_to_docker_hub:
@@ -121,6 +121,7 @@ jobs:
           # Выполняет миграции и сбор статики
           sudo docker compose -f docker-compose.yml exec backend python manage.py migrate
           sudo docker compose -f docker-compose.yml exec backend python manage.py collectstatic
+          sudo docker compose -f docker-compose.yml exec backend python manage.py loaddata db.json
           sudo docker compose -f docker-compose.yml exec backend cp -r /app/collected_static/. /backend_static/static/
   send_message:
     runs-on: ubuntu-latest
