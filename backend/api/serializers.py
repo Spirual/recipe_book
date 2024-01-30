@@ -118,7 +118,7 @@ class WriteRecipeIngredientSerializer(Serializer):
 
 
 class RecipeWriteSerializer(ModelSerializer):
-    image = Base64ImageField(required=False, allow_null=True)
+    image = Base64ImageField(required=True)
     ingredients = WriteRecipeIngredientSerializer(many=True)
     tags = PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
 
@@ -144,6 +144,18 @@ class RecipeWriteSerializer(ModelSerializer):
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
+        tags_list = []
+        for tag in tags:
+            if tag in tags_list:
+                raise ValidationError({
+                    'tags': 'Теги не могут повторятся!'
+                })
+            else:
+                tags_list.append(tag)
+        if not tags:
+            raise ValidationError({
+                'tags': 'Выберите хотя-бы один тег!'
+            })
         if not ingredients:
             raise ValidationError({
                 'ingredients': 'Рецепт не может быть без ингредиентов!'
@@ -152,16 +164,36 @@ class RecipeWriteSerializer(ModelSerializer):
             **validated_data,
         )
         recipe.tags.set(tags)
+        ingredient_list = []
         for ingredient in ingredients:
+            ingredient_id = ingredient['id']
+            if ingredient_id in ingredient_list:
+                raise ValidationError({
+                    'ingredients': (f'Ингридиента с id {ingredient_id} '
+                                    'повторяется!')
+                })
+            else:
+                ingredient_list.append(ingredient_id)
+            db_ingredient = Ingredient.objects.filter(id=ingredient_id).first()
+            if not db_ingredient:
+                raise ValidationError({
+                    'ingredients': (f'Ингридиента с id {ingredient_id} '
+                                    'не существует!')
+                })
+            if ingredient['amount'] < 1:
+                raise ValidationError({
+                    'amount': (
+                        f'Кол-во ингридиента {db_ingredient.name} меньше 1.'
+                    )
+                })
             RecipeIngredient.objects.create(
                 recipe=recipe,
-                ingredient_id=ingredient['id'],
+                ingredient=db_ingredient,
                 amount=ingredient['amount'],
             )
         return recipe
 
     def update(self, instance, validated_data):
-        instance.tags.set(validated_data.get('tags', instance.tags.all()))
         instance.name = validated_data.get("name", instance.name)
         instance.image = validated_data.get("image", instance.image)
         instance.text = validated_data.get("text", instance.text)
@@ -169,17 +201,58 @@ class RecipeWriteSerializer(ModelSerializer):
             "cooking_time",
             instance.cooking_time,
         )
-        instance.save()
+
+        tags = validated_data.get('tags')
+        if not tags:
+            raise ValidationError({
+                'tags': 'Выберите хотя-бы один тег!'
+            })
+        tags_list = []
+        for tag in tags:
+            if tag in tags_list:
+                raise ValidationError({
+                    'tags': 'Теги не могут повторятся!'
+                })
+            else:
+                tags_list.append(tag)
 
         ingredients = validated_data.get('ingredients')
-        if ingredients:
-            instance.ingredients.all().delete()
-            for ingredient in ingredients:
-                RecipeIngredient.objects.create(
-                    recipe=instance,
-                    ingredient_id=ingredient['id'],
-                    amount=ingredient['amount'],
-                )
+        if not ingredients:
+            raise ValidationError({
+                'ingredients': 'Необходим хотя бы один ингредиент.'
+            })
+        instance.ingredients.all().delete()
+        ingredient_list = []
+        for ingredient in ingredients:
+            ingredient_id = ingredient['id']
+            amount = ingredient['amount']
+            if ingredient_id in ingredient_list:
+                raise ValidationError({
+                    'ingredients': (f'Ингридиента с id {ingredient_id} '
+                                    'повторяется!')
+                })
+            else:
+                ingredient_list.append(ingredient_id)
+            db_ingredient = Ingredient.objects.filter(
+                id=ingredient_id,
+            ).first()
+            if not db_ingredient:
+                raise ValidationError({
+                    'ingredients': (f'Ингридиента с id {ingredient_id} '
+                                    'не существует!')
+                })
+            if amount < 1:
+                raise ValidationError({
+                    'amount': (
+                        f'Кол-во ингридиента {db_ingredient.name} меньше 1.'
+                    )
+                })
+            RecipeIngredient.objects.create(
+                recipe=instance,
+                ingredient=db_ingredient,
+                amount=amount,
+            )
+        instance.save()
         return instance
 
 

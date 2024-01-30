@@ -3,6 +3,8 @@ from django.core.validators import RegexValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q, F
 
+from foodgram import settings
+
 User = get_user_model()
 
 
@@ -10,15 +12,15 @@ class Tag(models.Model):
     name = models.CharField(
         verbose_name='Название',
         unique=True,
-        max_length=200
+        max_length=settings.CHAR_FIELD_MAX_LENGTH
     )
     color = models.CharField(
         verbose_name='Цветовой HEX-код',
         unique=True,
-        max_length=7,
+        max_length=settings.TAG_COLOR_MAX_LENGTH,
         validators=[
             RegexValidator(
-                regex='^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$',
+                regex=r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$',
                 message='Введенное значение не является цветом в формате HEX!'
             )
         ]
@@ -26,7 +28,7 @@ class Tag(models.Model):
     slug = models.SlugField(
         verbose_name='Уникальный слаг',
         unique=True,
-        max_length=200,
+        max_length=settings.CHAR_FIELD_MAX_LENGTH,
     )
 
     class Meta:
@@ -40,9 +42,11 @@ class Tag(models.Model):
 class Ingredient(models.Model):
     name = models.CharField(
         verbose_name='Название ингридиента',
-        max_length=200,
+        max_length=settings.CHAR_FIELD_MAX_LENGTH,
     )
-    measurement_unit = models.CharField(max_length=200)
+    measurement_unit = models.CharField(
+        max_length=settings.CHAR_FIELD_MAX_LENGTH,
+    )
 
     class Meta:
         verbose_name = 'Ингридиент'
@@ -60,10 +64,15 @@ class Recipe(models.Model):
         on_delete=models.CASCADE,
         related_name='recipes',
     )
-    name = models.CharField(verbose_name='Название рецепта', max_length=200)
+    name = models.CharField(
+        verbose_name='Название рецепта',
+        max_length=settings.CHAR_FIELD_MAX_LENGTH,
+    )
     image = models.ImageField(
         verbose_name='Изображение блюда',
         upload_to='recipe_images/',
+        blank=False,
+        null=False,
     )
     text = models.TextField(verbose_name='Описание рецепта')
     tags = models.ManyToManyField(
@@ -75,9 +84,10 @@ class Recipe(models.Model):
         verbose_name='Время приготовления',
         validators=[
             MinValueValidator(
-                limit_value=1,
+                limit_value=settings.VALIDATE_MIN_VALUE,
                 message=(
-                    'Время приготовления не может быть меньше 1 минуты',
+                    ('Время приготовления не может быть меньше'
+                     f' {settings.VALIDATE_MIN_VALUE} минуты'),
                 )
             ),
         ],
@@ -108,7 +118,18 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Ингридиент'
     )
-    amount = models.FloatField(verbose_name='Количество')
+    amount = models.FloatField(
+        verbose_name='Количество',
+        validators=[
+            MinValueValidator(
+                limit_value=settings.VALIDATE_MIN_VALUE,
+                message=((
+                    'Количество ингридиентов не может '
+                    f'быть меньше {settings.VALIDATE_MIN_VALUE}'),
+                )
+            ),
+        ],
+    )
 
     class Meta:
         verbose_name = 'Ингридиенты в рецепте'

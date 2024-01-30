@@ -22,6 +22,8 @@ class RecipesFilterBackend(FilterSet):
     def filter_is_favorited(self, queryset, name, value):
         user = self.request.user
         is_favorited = bool(value)
+        if not user.is_authenticated:
+            return queryset.none()
         if is_favorited:
             queryset = queryset.filter(
                 id__in=user.favorites.values('recipe__id')
@@ -36,6 +38,8 @@ class RecipesFilterBackend(FilterSet):
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         is_in_shopping_cart = bool(value)
+        if not user.is_authenticated:
+            return queryset.none()
         if is_in_shopping_cart:
             queryset = queryset.filter(
                 id__in=user.shopping_list.values('recipe__id')

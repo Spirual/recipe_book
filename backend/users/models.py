@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
+
+from foodgram import settings
 
 
 class CustomUser(AbstractUser):
@@ -7,17 +10,33 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
     email = models.EmailField(
         'Электронная почта',
-        max_length=254,
+        max_length=settings.EMAIL_MAX_LENGTH,
         unique=True,
     )
     username = models.CharField(
         'Имя пользователя',
-        max_length=150,
+        max_length=settings.USER_CHAR_FIELD_MAX_LENGTH,
         unique=True,
+        validators=[
+            RegexValidator(
+                regex=r'^[\w.@+-]+$',
+                message=('Используются недопустимые '
+                         'символы в имени пользователя')
+            )
+        ]
     )
-    first_name = models.CharField('Имя', max_length=150)
-    last_name = models.CharField('Фамилия', max_length=150)
-    password = models.CharField('Пароль', max_length=150)
+    first_name = models.CharField(
+        'Имя',
+        max_length=settings.USER_CHAR_FIELD_MAX_LENGTH,
+    )
+    last_name = models.CharField(
+        'Фамилия',
+        max_length=settings.USER_CHAR_FIELD_MAX_LENGTH,
+    )
+    password = models.CharField(
+        'Пароль',
+        max_length=settings.USER_CHAR_FIELD_MAX_LENGTH,
+    )
 
     class Meta:
         ordering = ['id']

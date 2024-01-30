@@ -96,12 +96,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
+    'DEFAULT_PAGINATION_CLASS': 'api.pagination.PageLimitPagination',
 }
 
 DJOSER = {
@@ -110,7 +111,7 @@ DJOSER = {
         'current_user': 'users.serializers.CustomUserSerializer',
     },
     'PERMISSIONS': {
-        'user': ['rest_framework.permissions.AllowAny'],
+        'user': ['api.permissions.AllowAnyExceptMe'],
         'user_list': ['rest_framework.permissions.AllowAny'],
         'user_create': ['rest_framework.permissions.AllowAny'],
     },
@@ -134,3 +135,10 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.CustomUser'
+
+
+CHAR_FIELD_MAX_LENGTH = 200
+TAG_COLOR_MAX_LENGTH = 7
+VALIDATE_MIN_VALUE = 1
+EMAIL_MAX_LENGTH = 254
+USER_CHAR_FIELD_MAX_LENGTH = 150

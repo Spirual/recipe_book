@@ -25,15 +25,17 @@ User = get_user_model()
 
 class TagViewSet(ReadOnlyModelViewSet):
     permission_classes = (IsAuthorOrReadOnlyPermission,)
+    pagination_class = None
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
+    pagination_class = None
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = (IngredientFilter,)
-    search_fields = ('name',)
+    search_fields = ('^name',)
 
 
 class RecipeViewSet(ModelViewSet):
@@ -57,13 +59,31 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated],
     )
     def favorite(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
+        recipe = Recipe.objects.filter(pk=pk).first()
         user = request.user
         if request.method == 'POST':
+            if not recipe:
+                return Response(
+                    {'errors': 'Рецепт с таким ID в базе не найден!'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if Favorite.objects.filter(
+                recipe=recipe,
+                user=user,
+            ).exists():
+                return Response(
+                    {'errors': 'Рецепт уже добавлен!'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             favorite = Favorite.objects.create(recipe=recipe, user=user)
             serializer = FavoriteSerializer(favorite)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
+            if not recipe:
+                return Response(
+                    {'errors': 'Рецепт с таким ID в базе не найден!'},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
             favorite = Favorite.objects.filter(recipe=recipe, user=user)
             if favorite.exists():
                 favorite.delete()
@@ -105,9 +125,22 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated],
     )
     def shopping_cart(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
+        recipe = Recipe.objects.filter(pk=pk).first()
         user = request.user
         if request.method == 'POST':
+            if not recipe:
+                return Response(
+                    {'errors': 'Рецепт с таким ID в базе не найден!'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if ShoppingList.objects.filter(
+                recipe=recipe,
+                user=user,
+            ).exists():
+                return Response(
+                    {'errors': 'Рецепт уже добавлен!'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             shopping_list = ShoppingList.objects.create(
                 recipe=recipe,
                 user=user,
@@ -115,6 +148,11 @@ class RecipeViewSet(ModelViewSet):
             serializer = ShortRecipeSerializer(shopping_list.recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
+            if not recipe:
+                return Response(
+                    {'errors': 'Рецепт с таким ID в базе не найден!'},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
             shopping_list = ShoppingList.objects.filter(
                 recipe=recipe,
                 user=user,
@@ -126,13 +164,21 @@ class RecipeViewSet(ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
 
 
-class SubscriptionsViewSet(ModelViewSet):
+class Subscriptions(APIView):
     permission_classes = (IsAuthorOrReadOnlyPermission,)
-    serializer_class = SubscribedUserSerializer
     pagination_class = PageLimitPagination
 
-    def get_queryset(self):
-        return self.request.user.subscribes.all()
+    def get(self, request):
+        user = request.user
+        subscribes = user.subscribes.all()
+        paginator = PageLimitPagination()
+        page = paginator.paginate_queryset(subscribes, request)
+        serializer = SubscribedUserSerializer(
+            page,
+            many=True,
+            context={'request': request},
+        )
+        return paginator.get_paginated_response(serializer.data)
 
 
 class AddOrDeleteSubscription(APIView):
