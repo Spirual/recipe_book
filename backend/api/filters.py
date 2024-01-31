@@ -1,4 +1,4 @@
-from django_filters import CharFilter, NumberFilter
+from django_filters import NumberFilter, AllValuesMultipleFilter
 from django_filters.rest_framework import FilterSet
 from rest_framework.filters import SearchFilter
 
@@ -7,17 +7,13 @@ from recipes.models import Recipe
 
 class RecipesFilterBackend(FilterSet):
     author = NumberFilter(field_name='author__id')
-    tags = CharFilter(field_name='tags__slug', method='filter_tags')
+    tags = AllValuesMultipleFilter(field_name='tags__slug')
     is_favorited = NumberFilter(method='filter_is_favorited')
     is_in_shopping_cart = NumberFilter(method='filter_is_in_shopping_cart')
 
     class Meta:
         model = Recipe
         fields = ('author', 'tags', 'is_favorited')
-
-    def filter_tags(self, queryset, name, value):
-        tags = self.request.query_params.getlist('tags')
-        return queryset.filter(tags__slug__in=tags).distinct()
 
     def filter_is_favorited(self, queryset, name, value):
         user = self.request.user
