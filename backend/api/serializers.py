@@ -84,7 +84,7 @@ class RecipeIngredientSerializer(ModelSerializer):
 
 
 class RecipeReadSerializer(ModelSerializer):
-    image = Base64ImageField(required=False, allow_null=True)
+    image = SerializerMethodField(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     author = CustomUserSerializer(read_only=True)
     ingredients = RecipeIngredientSerializer(many=True, read_only=True)
@@ -105,6 +105,11 @@ class RecipeReadSerializer(ModelSerializer):
             'text',
             'cooking_time',
         )
+
+    def get_image(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
 
     def get_is_favorited(self, obj):
         current_user = self.context['request'].user
