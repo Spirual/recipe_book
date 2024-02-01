@@ -41,14 +41,17 @@ class CustomUser(AbstractUser):
     favorites = models.ManyToManyField(
         'recipes.Recipe',
         related_name='added_to_favorites',
+        blank=True,
     )
     shopping_list = models.ManyToManyField(
         'recipes.Recipe',
         related_name='added_to_shopping_list',
+        blank=True,
     )
     subscribes = models.ManyToManyField(
         'CustomUser',
         related_name='subscribers',
+        blank=True,
     )
 
     class Meta:
