@@ -26,7 +26,6 @@ from recipes.models import (
     Tag,
     Ingredient,
     Recipe,
-    Subscription,
 )
 
 User = get_user_model()
@@ -186,11 +185,7 @@ class AddOrDeleteSubscription(APIView):
         author = get_object_or_404(User, pk=pk)
         user = request.user
 
-        subscription = Subscription.objects.filter(
-            subscriber=user,
-            author=author,
-        )
-        if subscription.exists():
+        if user.subscribes.filter(pk=author.pk).exists():
             data = {'errors': 'Вы уже подписаны на этого пользователя.'}
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
 
@@ -198,12 +193,9 @@ class AddOrDeleteSubscription(APIView):
             data = {'errors': 'Нельзя подписаться на самого себя!'}
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
 
-        subscription = Subscription.objects.create(
-            subscriber=user,
-            author=author,
-        )
+        user.subscribes.add(author)
         serializer = SubscribedUserSerializer(
-            subscription,
+            author,
             context={'request': request},
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -211,12 +203,8 @@ class AddOrDeleteSubscription(APIView):
     def delete(self, request, pk):
         author = get_object_or_404(User, pk=pk)
         user = request.user
-        subscription = Subscription.objects.filter(
-            subscriber=user,
-            author=author,
-        )
-        if subscription.exists():
-            subscription.delete()
+        if user.subscribes.filter(pk=author.pk).exists():
+            user.subscribes.remove(author)
             return Response(status=status.HTTP_204_NO_CONTENT)
         data = {'errors': 'Такого пользователя нет в ваших подписках'}
         return Response(status=status.HTTP_400_BAD_REQUEST, data=data)

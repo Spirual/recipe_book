@@ -18,7 +18,6 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredient,
-    Subscription,
 )
 from users.serializers import CustomUserSerializer
 
@@ -264,41 +263,23 @@ class ShortRecipeSerializer(ModelSerializer):
         )
 
 
-class SubscribedUserSerializer(ModelSerializer):
-    id = IntegerField(source='author.id')
-    email = CharField(source='author.email')
-    username = CharField(source='author.username')
-    first_name = CharField(source='author.first_name')
-    last_name = CharField(source='author.last_name')
-    is_subscribed = SerializerMethodField()
+class SubscribedUserSerializer(CustomUserSerializer):
     recipes = SerializerMethodField()
     recipes_count = SerializerMethodField()
 
-    class Meta:
-        model = Subscription
-        fields = (
-            'id',
-            'email',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
+    class Meta(CustomUserSerializer.Meta):
+        fields = CustomUserSerializer.Meta.fields + (
             'recipes',
             'recipes_count',
         )
 
-    def get_is_subscribed(self, obj):
-        user = self.context['request'].user
-
-        return user.subscribes.filter(author=obj.author).exists()
-
     def get_recipes_count(self, obj):
-        return obj.author.recipes.count()
+        return obj.recipes.count()
 
     def get_recipes(self, obj):
-        recipes_limit = self.context['request'].query_params.get(
-            'recipes_limit', 20
+        recipes_limit = int(
+            self.context['request'].query_params.get('recipes_limit', 20)
         )
-        recipes = obj.author.recipes.all()[: int(recipes_limit)]
+        recipes = obj.recipes.all()[:recipes_limit]
         serializer = ShortRecipeSerializer(recipes, many=True)
         return serializer.data

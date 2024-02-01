@@ -136,35 +136,3 @@ class RecipeIngredient(models.Model):
     class Meta:
         verbose_name = 'Ингридиенты в рецепте'
         verbose_name_plural = 'Ингридиенты в рецепте'
-
-
-class Subscription(models.Model):
-    subscriber = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='subscribes',
-        verbose_name='Подписчик',
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='subscribers',
-        verbose_name='Автор',
-    )
-
-    class Meta:
-        verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписки'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['author', 'subscriber'],
-                name='unique_author_subscriber',
-            ),
-            models.CheckConstraint(
-                check=~Q(author=F('subscriber')),
-                name='check_self_subscriber',
-            ),
-        ]
-
-    def __str__(self):
-        return f'Подписка {self.subscriber} на {self.author}.'

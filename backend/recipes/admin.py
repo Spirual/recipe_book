@@ -6,7 +6,6 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredient,
-    Subscription,
 )
 
 
@@ -51,5 +50,4 @@ class RecipeAdmin(admin.ModelAdmin):
 
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(Subscription)
 admin.site.register(Tag)
