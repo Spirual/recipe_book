@@ -27,7 +27,6 @@ from recipes.models import (
     Ingredient,
     Recipe,
     Subscription,
-    ShoppingList,
 )
 
 User = get_user_model()
@@ -103,8 +102,8 @@ class RecipeViewSet(ModelViewSet):
         shopping_list = user.shopping_list.all()
 
         aggregated_shopping_list = {}
-        for shopping_item in shopping_list:
-            for recipe_ingredient in shopping_item.recipe.ingredients.all():
+        for recipe in shopping_list:
+            for recipe_ingredient in recipe.ingredients.all():
                 ingredient_name = recipe_ingredient.ingredient.name
                 if ingredient_name in aggregated_shopping_list:
                     aggregated_shopping_list[ingredient_name][
@@ -142,19 +141,13 @@ class RecipeViewSet(ModelViewSet):
                     {'errors': 'Рецепт с таким ID в базе не найден!'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if ShoppingList.objects.filter(
-                recipe=recipe,
-                user=user,
-            ).exists():
+            if user.shopping_list.filter(pk=recipe.pk).exists():
                 return Response(
                     {'errors': 'Рецепт уже добавлен!'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            shopping_list = ShoppingList.objects.create(
-                recipe=recipe,
-                user=user,
-            )
-            serializer = ShortRecipeSerializer(shopping_list.recipe)
+            user.shopping_list.add(recipe)
+            serializer = ShortRecipeSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
             if not recipe:
@@ -162,12 +155,8 @@ class RecipeViewSet(ModelViewSet):
                     {'errors': 'Рецепт с таким ID в базе не найден!'},
                     status=status.HTTP_404_NOT_FOUND,
                 )
-            shopping_list = ShoppingList.objects.filter(
-                recipe=recipe,
-                user=user,
-            )
-            if shopping_list.exists():
-                shopping_list.delete()
+            if user.shopping_list.filter(pk=recipe.pk).exists():
+                user.shopping_list.remove(recipe)
                 return Response(status=status.HTTP_204_NO_CONTENT)
             data = {'errors': 'Рецепт отсутствует в списке покупок.'}
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data)

@@ -38,11 +38,11 @@ class RecipesFilterBackend(FilterSet):
             return queryset.none()
         if is_in_shopping_cart:
             queryset = queryset.filter(
-                id__in=user.shopping_list.values('recipe__id')
+                id__in=user.shopping_list.values('id')
             )
         else:
             queryset = queryset.exclude(
-                id__in=user.shopping_list.values('recipe__id')
+                id__in=user.shopping_list.values('id')
             )
 
         return queryset

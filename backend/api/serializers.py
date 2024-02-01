@@ -119,7 +119,7 @@ class RecipeReadSerializer(ModelSerializer):
         current_user = self.context['request'].user
         if not current_user.is_authenticated:
             return False
-        return current_user.shopping_list.filter(recipe=obj).exists()
+        return current_user.shopping_list.filter(pk=obj.pk).exists()
 
 
 class WriteRecipeIngredientSerializer(Serializer):

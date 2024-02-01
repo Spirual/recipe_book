@@ -39,6 +39,14 @@ class CustomUser(AbstractUser):
         max_length=settings.USER_CHAR_FIELD_MAX_LENGTH,
     )
     favorites = models.ManyToManyField('recipes.Recipe')
+    favorites = models.ManyToManyField(
+        'recipes.Recipe',
+        related_name='added_to_favorites',
+    )
+    shopping_list = models.ManyToManyField(
+        'recipes.Recipe',
+        related_name='added_to_shopping_list',
+    )
 
     class Meta:
         verbose_name = 'Пользователь'
