@@ -198,7 +198,13 @@ class RecipeWriteSerializer(ModelSerializer):
 
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
+        if not ingredients:
+            raise ValidationError(
+                {'ingredients': 'Рецепт не может быть без ингредиентов!'}
+            )
         tags = validated_data.pop('tags')
+        if not tags:
+            raise ValidationError({'tags': 'Рецепт не может быть без тегов!'})
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
         for ingredient in ingredients:
@@ -219,10 +225,16 @@ class RecipeWriteSerializer(ModelSerializer):
         )
 
         tags = validated_data.get('tags')
+        if not tags:
+            raise ValidationError({'tags': 'Рецепт не может быть без тегов!'})
         instance.tags.clear()
         instance.tags.set(tags)
 
         ingredients = validated_data.get('ingredients')
+        if not ingredients:
+            raise ValidationError(
+                {'ingredients': 'Рецепт не может быть без ингредиентов!'}
+            )
         instance.ingredients.all().delete()
         for ingredient in ingredients:
             RecipeIngredient.objects.create(
