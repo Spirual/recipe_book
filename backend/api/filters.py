@@ -21,13 +21,9 @@ class RecipesFilterBackend(FilterSet):
         if not user.is_authenticated:
             return queryset.none()
         if is_favorited:
-            queryset = queryset.filter(
-                id__in=user.favorites.values('id')
-            )
+            queryset = queryset.filter(id__in=user.favorites.values('id'))
         else:
-            queryset = queryset.exclude(
-                id__in=user.favorites.values('id')
-            )
+            queryset = queryset.exclude(id__in=user.favorites.values('id'))
 
         return queryset
 
@@ -37,13 +33,9 @@ class RecipesFilterBackend(FilterSet):
         if not user.is_authenticated:
             return queryset.none()
         if is_in_shopping_cart:
-            queryset = queryset.filter(
-                id__in=user.shopping_list.values('id')
-            )
+            queryset = queryset.filter(id__in=user.shopping_list.values('id'))
         else:
-            queryset = queryset.exclude(
-                id__in=user.shopping_list.values('id')
-            )
+            queryset = queryset.exclude(id__in=user.shopping_list.values('id'))
 
         return queryset
 
