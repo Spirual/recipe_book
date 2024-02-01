@@ -8,18 +8,16 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import (
     IntegerField,
     SerializerMethodField,
-    CharField,
+    CharField, ImageField,
 )
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import Serializer, ModelSerializer
-from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import (
     Tag,
     Ingredient,
     Recipe,
     RecipeIngredient,
-    Favorite,
     Subscription,
 )
 from users.serializers import CustomUserSerializer
@@ -115,7 +113,7 @@ class RecipeReadSerializer(ModelSerializer):
         current_user = self.context['request'].user
         if not current_user.is_authenticated:
             return False
-        return current_user.favorites.filter(recipe=obj).exists()
+        return current_user.favorites.filter(pk=obj.pk).exists()
 
     def get_is_in_shopping_cart(self, obj):
         current_user = self.context['request'].user
@@ -246,36 +244,11 @@ class RecipeWriteSerializer(ModelSerializer):
         return instance
 
 
-class FavoriteSerializer(ModelSerializer):
-    id = SerializerMethodField(read_only=True)
-    name = SerializerMethodField(read_only=True)
-    image = SerializerMethodField(read_only=True)
-    cooking_time = SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = Favorite
-        fields = ('id', 'name', 'image', 'cooking_time')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Favorite.objects.all(),
-                fields=('user', 'recipe'),
-                message='Вы уже добавили этот рецепт.',
-            )
-        ]
-
-    def get_id(self, obj):
-        return obj.recipe.id
-
-    def get_name(self, obj):
-        return obj.recipe.name
-
-    def get_image(self, obj):
-        if obj.recipe.image:
-            return obj.recipe.image.url
-        return None
-
-    def get_cooking_time(self, obj):
-        return obj.recipe.cooking_time
+class FavoriteSerializer(Serializer):
+    id = IntegerField()
+    name = CharField()
+    image = ImageField()
+    cooking_time = IntegerField()
 
 
 class ShortRecipeSerializer(ModelSerializer):

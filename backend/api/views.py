@@ -26,7 +26,6 @@ from recipes.models import (
     Tag,
     Ingredient,
     Recipe,
-    Favorite,
     Subscription,
     ShoppingList,
 )
@@ -78,16 +77,13 @@ class RecipeViewSet(ModelViewSet):
                     {'errors': 'Рецепт с таким ID в базе не найден!'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if Favorite.objects.filter(
-                recipe=recipe,
-                user=user,
-            ).exists():
+            if user.favorites.filter(pk=recipe.pk).exists():
                 return Response(
                     {'errors': 'Рецепт уже добавлен!'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            favorite = Favorite.objects.create(recipe=recipe, user=user)
-            serializer = FavoriteSerializer(favorite)
+            user.favorites.add(recipe)
+            serializer = FavoriteSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
             if not recipe:
@@ -95,9 +91,8 @@ class RecipeViewSet(ModelViewSet):
                     {'errors': 'Рецепт с таким ID в базе не найден!'},
                     status=status.HTTP_404_NOT_FOUND,
                 )
-            favorite = Favorite.objects.filter(recipe=recipe, user=user)
-            if favorite.exists():
-                favorite.delete()
+            if user.favorites.filter(pk=recipe.pk).exists():
+                user.favorites.remove(recipe)
                 return Response(status=status.HTTP_204_NO_CONTENT)
             data = {'errors': 'Рецепт отсутствует в избранном.'}
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data)

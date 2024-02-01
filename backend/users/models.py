@@ -38,9 +38,9 @@ class CustomUser(AbstractUser):
         'Пароль',
         max_length=settings.USER_CHAR_FIELD_MAX_LENGTH,
     )
+    favorites = models.ManyToManyField('recipes.Recipe')
 
     class Meta:
-        ordering = ['id']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 

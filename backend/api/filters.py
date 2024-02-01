@@ -22,11 +22,11 @@ class RecipesFilterBackend(FilterSet):
             return queryset.none()
         if is_favorited:
             queryset = queryset.filter(
-                id__in=user.favorites.values('recipe__id')
+                id__in=user.favorites.values('id')
             )
         else:
             queryset = queryset.exclude(
-                id__in=user.favorites.values('recipe__id')
+                id__in=user.favorites.values('id')
             )
 
         return queryset
