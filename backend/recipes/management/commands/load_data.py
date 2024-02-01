@@ -18,5 +18,5 @@ class Command(BaseCommand):
 
         # Создание тегов для рецепта.
         Tag.objects.create(name='Завтрак', color='#FFA500', slug='breakfast')
-        Tag.objects.create(name='Обед', color='#228B22', slug='lunch ')
+        Tag.objects.create(name='Обед', color='#228B22', slug='lunch')
         Tag.objects.create(name='Ужин', color='#483D8B', slug='dinner')
