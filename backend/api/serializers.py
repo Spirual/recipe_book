@@ -39,10 +39,12 @@ class CustomUserSerializer(UserSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        current_user = self.context['request'].user
-        if not current_user.is_authenticated:
-            return False
-        return current_user.subscribes.filter(pk=obj.pk).exists()
+        request = self.context['request']
+        return (
+                request
+                and request.user.is_authenticated
+                and request.user.
+                subscribes.filter(pk=obj.pk).exists())
 
 
 class Base64ImageField(serializers.ImageField):
@@ -57,7 +59,6 @@ class Base64ImageField(serializers.ImageField):
 
 
 class TagSerializer(ModelSerializer):
-
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'slug')
@@ -117,18 +118,20 @@ class RecipeReadSerializer(ModelSerializer):
         return None
 
     def get_is_favorited(self, obj):
+        request = self.context['request']
         return (
-            self.context.get('request')
-            and self.context['request'].user.is_authenticated
-            and (self.context['request'].user.
-                 favorites.filter(pk=obj.pk).exists())
-        )
+                request
+                and request.user.is_authenticated
+                and request.user.
+                favorites.filter(pk=obj.pk).exists())
 
     def get_is_in_shopping_cart(self, obj):
-        current_user = self.context['request'].user
-        if not current_user.is_authenticated:
-            return False
-        return current_user.shopping_list.filter(pk=obj.pk).exists()
+        request = self.context['request']
+        return (
+                request
+                and request.user.is_authenticated
+                and request.user.
+                shopping_list.filter(pk=obj.pk).exists())
 
 
 class WriteRecipeIngredientSerializer(ModelSerializer):
