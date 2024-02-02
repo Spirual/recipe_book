@@ -1,42 +1,33 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
 from api import constants
-from foodgram import settings
 
 
 class CustomUser(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
     email = models.EmailField(
-        'Электронная почта',
-        max_length=constants.EMAIL_MAX_LENGTH,
+        verbose_name='Электронная почта',
         unique=True,
     )
     username = models.CharField(
-        'Имя пользователя',
-        max_length=constants.USER_CHAR_FIELD_MAX_LENGTH,
+        verbose_name='Имя пользователя',
         unique=True,
-        validators=[
-            RegexValidator(
-                regex=r'^[\w.@+-]+$',
-                message=(
-                    'Используются недопустимые ' 'символы в имени пользователя'
-                ),
-            )
-        ],
+        max_length=constants.USER_CHAR_FIELD_MAX_LENGTH,
+        validators=[UnicodeUsernameValidator()],
     )
     first_name = models.CharField(
-        'Имя',
+        verbose_name='Имя',
         max_length=constants.USER_CHAR_FIELD_MAX_LENGTH,
     )
     last_name = models.CharField(
-        'Фамилия',
+        verbose_name='Фамилия',
         max_length=constants.USER_CHAR_FIELD_MAX_LENGTH,
     )
     password = models.CharField(
-        'Пароль',
+        verbose_name='Пароль',
         max_length=constants.USER_CHAR_FIELD_MAX_LENGTH,
     )
     subscribes = models.ManyToManyField(
