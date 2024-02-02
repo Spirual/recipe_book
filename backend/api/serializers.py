@@ -131,9 +131,12 @@ class RecipeReadSerializer(ModelSerializer):
         return current_user.shopping_list.filter(pk=obj.pk).exists()
 
 
-class WriteRecipeIngredientSerializer(Serializer):
+class WriteRecipeIngredientSerializer(ModelSerializer):
     id = IntegerField()
-    amount = IntegerField()
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'amount')
 
 
 class RecipeWriteSerializer(ModelSerializer):
