@@ -141,28 +141,25 @@ class RecipeWriteSerializer(ModelSerializer):
             instance, context={'request': request}
         ).data
 
-    def validate_tags(self, data):
-        if data is None or len(data) == 0:
+    def validate(self, data):
+        tags = data.get('tags')
+        ingredients = data.get('ingredients')
+
+        if not tags or len(tags) == 0:
             raise ValidationError({'tags': 'Выберите хотя-бы один тег!'})
         tags_list = []
-        for tag in data:
-            if not Tag.objects.filter(id=tag.id).exists():
-                raise ValidationError(
-                    {'tags': f'Тега с ID {tag.id} не существует.'}
-                )
+        for tag in tags:
             if tag.id not in tags_list:
                 tags_list.append(tag.id)
             else:
                 raise ValidationError({'tags': 'Теги не могут повторятся!'})
-        return data
 
-    def validate_ingredients(self, data):
-        if data is None or len(data) == 0:
+        if not ingredients or len(ingredients) == 0:
             raise ValidationError(
                 {'ingredients': 'Рецепт не может быть без ингредиентов!'}
             )
         ingredient_list = []
-        for ingredient in data:
+        for ingredient in ingredients:
             ingredient_id = ingredient['id']
             db_ingredient = Ingredient.objects.filter(id=ingredient_id).first()
 
@@ -182,6 +179,8 @@ class RecipeWriteSerializer(ModelSerializer):
         return data
 
     def create(self, validated_data):
+        author = self.context['request'].user
+        validated_data['author'] = author
         ingredients = validated_data.pop('ingredients')
         if not ingredients:
             raise ValidationError(
@@ -201,33 +200,24 @@ class RecipeWriteSerializer(ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.image = validated_data.get('image', instance.image)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time',
-            instance.cooking_time,
-        )
+        tags_data = validated_data.pop('tags')
+        ingredients_data = validated_data.pop('ingredients')
 
-        tags = validated_data.get('tags')
-        if not tags:
-            raise ValidationError({'tags': 'Рецепт не может быть без тегов!'})
-        instance.tags.clear()
-        instance.tags.set(tags)
+        if tags_data:
+            instance.tags.clear()
+            instance.tags.set(tags_data)
 
-        ingredients = validated_data.get('ingredients')
-        if not ingredients:
-            raise ValidationError(
-                {'ingredients': 'Рецепт не может быть без ингредиентов!'}
-            )
-        instance.ingredients.all().delete()
-        for ingredient in ingredients:
-            RecipeIngredient.objects.create(
-                recipe=instance,
-                ingredient_id=ingredient['id'],
-                amount=ingredient['amount'],
-            )
-        instance.save()
+        if ingredients_data:
+            instance.ingredients.all().delete()
+            for ingredient in ingredients_data:
+                RecipeIngredient.objects.create(
+                    recipe=instance,
+                    ingredient_id=ingredient['id'],
+                    amount=ingredient['amount'],
+                )
+
+        instance = super().update(instance, validated_data)
+
         return instance
 
 
