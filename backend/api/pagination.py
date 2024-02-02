@@ -1,7 +1,9 @@
 from rest_framework.pagination import PageNumberPagination
 
+from api import constants
+
 
 class PageLimitPagination(PageNumberPagination):
     page_size_query_param = 'limit'
-    page_size = 20
-    max_page_size = 100
+    page_size = constants.PAGE_SIZE
+    max_page_size = constants.NAX_PAGE_SIZE
