@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
+from api import constants
 from recipes.models import (
     Tag,
     Ingredient,
@@ -16,7 +17,8 @@ class IngredientAdmin(admin.ModelAdmin):
 
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
-    extra = 1
+    extra = constants.RECIPE_EXTRA
+    min_num = constants.RECIPE_MIN_NUM
     autocomplete_fields = ('ingredient',)
 
 
