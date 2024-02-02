@@ -97,6 +97,16 @@ class Recipe(models.Model):
         verbose_name='Дата публикации',
         auto_now_add=True,
     )
+    favorites = models.ManyToManyField(
+        User,
+        related_name='favorites',
+        blank=True,
+    )
+    shopping_list = models.ManyToManyField(
+        User,
+        related_name='shopping_list',
+        blank=True,
+    )
 
     class Meta:
         verbose_name = 'Рецепт'

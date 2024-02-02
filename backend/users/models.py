@@ -38,16 +38,6 @@ class CustomUser(AbstractUser):
         'Пароль',
         max_length=settings.USER_CHAR_FIELD_MAX_LENGTH,
     )
-    favorites = models.ManyToManyField(
-        'recipes.Recipe',
-        related_name='added_to_favorites',
-        blank=True,
-    )
-    shopping_list = models.ManyToManyField(
-        'recipes.Recipe',
-        related_name='added_to_shopping_list',
-        blank=True,
-    )
     subscribes = models.ManyToManyField(
         'CustomUser',
         related_name='subscribers',
