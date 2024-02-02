@@ -2,6 +2,7 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+from djoser.serializers import UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import (
@@ -19,9 +20,29 @@ from recipes.models import (
     Recipe,
     RecipeIngredient,
 )
-from users.serializers import CustomUserSerializer
 
 User = get_user_model()
+
+
+class CustomUserSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+        )
+
+    def get_is_subscribed(self, obj):
+        current_user = self.context['request'].user
+        if not current_user.is_authenticated:
+            return False
+        return current_user.subscribes.filter(pk=obj.pk).exists()
 
 
 class Base64ImageField(serializers.ImageField):
