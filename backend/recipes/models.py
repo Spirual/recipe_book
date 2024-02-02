@@ -1,6 +1,6 @@
 from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 from api import constants
@@ -45,6 +45,12 @@ class Ingredient(models.Model):
         verbose_name = 'Ингридиент'
         verbose_name_plural = 'Ингридиенты'
         ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_name_measurement_unit',
+            )
+        ]
 
     def __str__(self):
         return f'{self.name} [{self.measurement_unit}]'
@@ -73,16 +79,21 @@ class Recipe(models.Model):
         verbose_name='Теги',
         related_name='recipes',
     )
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления',
         validators=[
             MinValueValidator(
                 limit_value=constants.VALIDATE_MIN_VALUE,
                 message=(
-                    (
-                        'Время приготовления не может быть меньше'
-                        f' {constants.VALIDATE_MIN_VALUE} минуты'
-                    ),
+                    'Время приготовления не может быть меньше'
+                    f' {constants.VALIDATE_MIN_VALUE} минуты'
+                ),
+            ),
+            MaxValueValidator(
+                limit_value=constants.VALIDATE_MAX_VALUE,
+                message=(
+                    'Время приготовления не может быть больше '
+                    f'{constants.VALIDATE_MAX_VALUE} минут'
                 ),
             ),
         ],
@@ -121,7 +132,7 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(
         Ingredient, on_delete=models.CASCADE, verbose_name='Ингридиент'
     )
-    amount = models.FloatField(
+    amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
         validators=[
             MinValueValidator(
@@ -131,6 +142,13 @@ class RecipeIngredient(models.Model):
                         'Количество ингридиентов не может '
                         f'быть меньше {constants.VALIDATE_MIN_VALUE}'
                     ),
+                ),
+            ),
+            MaxValueValidator(
+                limit_value=constants.VALIDATE_MAX_VALUE,
+                message=(
+                    'Количество ингридиентов не может '
+                    f'быть меньше {constants.VALIDATE_MAX_VALUE}'
                 ),
             ),
         ],
