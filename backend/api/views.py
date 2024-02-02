@@ -64,9 +64,9 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated],
     )
     def favorite(self, request, pk=None):
-        recipe = Recipe.objects.filter(pk=pk).first()
         user = request.user
         if request.method == 'POST':
+            recipe = Recipe.objects.filter(pk=pk).first()
             if not recipe:
                 return Response(
                     {'errors': 'Рецепт с таким ID в базе не найден!'},
@@ -81,16 +81,12 @@ class RecipeViewSet(ModelViewSet):
             serializer = FavoriteSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
-            if not recipe:
-                return Response(
-                    {'errors': 'Рецепт с таким ID в базе не найден!'},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-            if user.favorites.filter(pk=recipe.pk).exists():
-                user.favorites.remove(recipe)
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            data = {'errors': 'Рецепт отсутствует в избранном.'}
-            return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
+            recipe = get_object_or_404(Recipe, pk=pk)
+            if not user.favorites.filter(pk=recipe.pk).exists():
+                data = {'errors': 'Рецепт отсутствует в избранном.'}
+                return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
+            user.favorites.remove(recipe)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
