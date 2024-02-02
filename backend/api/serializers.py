@@ -36,7 +36,6 @@ class Base64ImageField(serializers.ImageField):
 
 
 class TagSerializer(ModelSerializer):
-    color = Hex2NameColor()
 
     class Meta:
         model = Tag
@@ -97,10 +96,12 @@ class RecipeReadSerializer(ModelSerializer):
         return None
 
     def get_is_favorited(self, obj):
-        current_user = self.context['request'].user
-        if not current_user.is_authenticated:
-            return False
-        return current_user.favorites.filter(pk=obj.pk).exists()
+        return (
+            self.context.get('request')
+            and self.context['request'].user.is_authenticated
+            and (self.context['request'].user.
+                 favorites.filter(pk=obj.pk).exists())
+        )
 
     def get_is_in_shopping_cart(self, obj):
         current_user = self.context['request'].user
@@ -182,13 +183,7 @@ class RecipeWriteSerializer(ModelSerializer):
         author = self.context['request'].user
         validated_data['author'] = author
         ingredients = validated_data.pop('ingredients')
-        if not ingredients:
-            raise ValidationError(
-                {'ingredients': 'Рецепт не может быть без ингредиентов!'}
-            )
         tags = validated_data.pop('tags')
-        if not tags:
-            raise ValidationError({'tags': 'Рецепт не может быть без тегов!'})
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
         for ingredient in ingredients:
@@ -255,9 +250,13 @@ class SubscribedUserSerializer(CustomUserSerializer):
         return obj.recipes.count()
 
     def get_recipes(self, obj):
-        recipes_limit = int(
-            self.context['request'].query_params.get('recipes_limit', 20)
-        )
+        try:
+            recipes_limit = int(
+                self.context['request'].query_params.get('recipes_limit', 20)
+            )
+        except ValueError:
+            recipes_limit = 20
+
         recipes = obj.recipes.all()[:recipes_limit]
         serializer = ShortRecipeSerializer(recipes, many=True)
         return serializer.data
