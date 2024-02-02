@@ -17,25 +17,17 @@ class RecipesFilterBackend(FilterSet):
 
     def filter_is_favorited(self, queryset, name, value):
         user = self.request.user
-        is_favorited = bool(value)
-        if not user.is_authenticated:
-            return queryset.none()
-        if is_favorited:
-            queryset = queryset.filter(id__in=user.favorites.values('id'))
-        else:
-            queryset = queryset.exclude(id__in=user.favorites.values('id'))
+        is_favorited = value
+        if user.is_authenticated and is_favorited:
+            return queryset.filter(id__in=user.favorites.values('id'))
 
         return queryset
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
-        is_in_shopping_cart = bool(value)
-        if not user.is_authenticated:
-            return queryset.none()
-        if is_in_shopping_cart:
-            queryset = queryset.filter(id__in=user.shopping_list.values('id'))
-        else:
-            queryset = queryset.exclude(id__in=user.shopping_list.values('id'))
+        is_in_shopping_cart = value
+        if user.is_authenticated and is_in_shopping_cart:
+            return queryset.filter(id__in=user.shopping_list.values('id'))
 
         return queryset
 
