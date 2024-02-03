@@ -19,7 +19,7 @@ class RecipesFilterBackend(FilterSet):
         user = self.request.user
         is_favorited = value
         if user.is_authenticated and is_favorited:
-            return queryset.filter(id__in=user.favorites.values('id'))
+            return queryset.filter(id__in=user.favorites.values('recipe__id'))
 
         return queryset
 
@@ -27,7 +27,7 @@ class RecipesFilterBackend(FilterSet):
         user = self.request.user
         is_in_shopping_cart = value
         if user.is_authenticated and is_in_shopping_cart:
-            return queryset.filter(id__in=user.shopping_list.values('id'))
+            return queryset.filter(id__in=user.shopping_list.values('recipe__id'))
 
         return queryset
 

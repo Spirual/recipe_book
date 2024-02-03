@@ -30,11 +30,6 @@ class CustomUser(AbstractUser):
         verbose_name='Пароль',
         max_length=constants.USER_CHAR_FIELD_MAX_LENGTH,
     )
-    subscribes = models.ManyToManyField(
-        'CustomUser',
-        related_name='subscribers',
-        blank=True,
-    )
 
     class Meta:
         verbose_name = 'Пользователь'

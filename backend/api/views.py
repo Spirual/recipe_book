@@ -20,12 +20,12 @@ from api.serializers import (
     RecipeReadSerializer,
     FavoriteSerializer,
     SubscribedUserSerializer,
-    ShortRecipeSerializer,
+    ShortRecipeSerializer, SubscribeSerializer,
 )
 from recipes.models import (
     Tag,
     Ingredient,
-    Recipe,
+    Recipe, Favorite, Subscription, ShoppingList,
 )
 
 User = get_user_model()
@@ -72,20 +72,24 @@ class RecipeViewSet(ModelViewSet):
                     {'errors': 'Рецепт с таким ID в базе не найден!'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if user.favorites.filter(pk=recipe.pk).exists():
+            if Favorite.objects.filter(
+                recipe=recipe,
+                user=user,
+            ).exists():
                 return Response(
                     {'errors': 'Рецепт уже добавлен!'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            user.favorites.add(recipe)
-            serializer = FavoriteSerializer(recipe)
+            favorite = Favorite.objects.create(recipe=recipe, user=user)
+            serializer = FavoriteSerializer(favorite)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
             recipe = get_object_or_404(Recipe, pk=pk)
-            if not user.favorites.filter(pk=recipe.pk).exists():
+            favorite = Favorite.objects.filter(recipe=recipe, user=user)
+            if not favorite:
                 data = {'errors': 'Рецепт отсутствует в избранном.'}
                 return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
-            user.favorites.remove(recipe)
+            favorite.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, permission_classes=[IsAuthenticated])
@@ -94,18 +98,16 @@ class RecipeViewSet(ModelViewSet):
         shopping_list = user.shopping_list.all()
 
         aggregated_shopping_list = {}
-        for recipe in shopping_list:
-            for recipe_ingredient in recipe.ingredients.all():
+        for shopping_item in shopping_list:
+            for recipe_ingredient in shopping_item.recipe.ingredients.all():
                 ingredient_name = recipe_ingredient.ingredient.name
                 if ingredient_name in aggregated_shopping_list:
                     aggregated_shopping_list[ingredient_name][
-                        'amount'
-                    ] += recipe_ingredient.amount
+                        'amount'] += recipe_ingredient.amount
                 else:
                     aggregated_shopping_list[ingredient_name] = {
                         'amount': recipe_ingredient.amount,
-                        'measurement_unit':
-                            recipe_ingredient.ingredient.measurement_unit,
+                        'measurement_unit': recipe_ingredient.ingredient.measurement_unit,
                     }
 
         context = {'shopping_list': aggregated_shopping_list}
@@ -114,8 +116,7 @@ class RecipeViewSet(ModelViewSet):
 
         response = HttpResponse(shopping_cart_text, content_type='text/plain')
         response[
-            'Content-Disposition'
-        ] = 'attachment; filename="shopping_list.txt"'
+            'Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
 
         return response
 
@@ -133,13 +134,19 @@ class RecipeViewSet(ModelViewSet):
                     {'errors': 'Рецепт с таким ID в базе не найден!'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if user.shopping_list.filter(pk=recipe.pk).exists():
+            if ShoppingList.objects.filter(
+                    recipe=recipe,
+                    user=user,
+            ).exists():
                 return Response(
                     {'errors': 'Рецепт уже добавлен!'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            user.shopping_list.add(recipe)
-            serializer = ShortRecipeSerializer(recipe)
+            shopping_list = ShoppingList.objects.create(
+                recipe=recipe,
+                user=user,
+            )
+            serializer = ShortRecipeSerializer(shopping_list.recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
             if not recipe:
@@ -147,8 +154,12 @@ class RecipeViewSet(ModelViewSet):
                     {'errors': 'Рецепт с таким ID в базе не найден!'},
                     status=status.HTTP_404_NOT_FOUND,
                 )
-            if user.shopping_list.filter(pk=recipe.pk).exists():
-                user.shopping_list.remove(recipe)
+            shopping_list = ShoppingList.objects.filter(
+                recipe=recipe,
+                user=user,
+            )
+            if shopping_list.exists():
+                shopping_list.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             data = {'errors': 'Рецепт отсутствует в списке покупок.'}
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
@@ -156,11 +167,9 @@ class RecipeViewSet(ModelViewSet):
 
 class Subscriptions(APIView):
     permission_classes = (IsAuthorOrReadOnlyPermission,)
-    pagination_class = PageLimitPagination
 
     def get(self, request):
-        user = request.user
-        subscribes = user.subscribes.all()
+        subscribes = User.objects.filter(subscribers__subscriber=self.request.user)
         paginator = PageLimitPagination()
         page = paginator.paginate_queryset(subscribes, request)
         serializer = SubscribedUserSerializer(
@@ -178,17 +187,12 @@ class AddOrDeleteSubscription(APIView):
         author = get_object_or_404(User, pk=pk)
         user = request.user
 
-        if user.subscribes.filter(pk=author.pk).exists():
-            data = {'errors': 'Вы уже подписаны на этого пользователя.'}
-            return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
-
-        if author == user:
-            data = {'errors': 'Нельзя подписаться на самого себя!'}
-            return Response(status=status.HTTP_400_BAD_REQUEST, data=data)
-
-        user.subscribes.add(author)
-        serializer = SubscribedUserSerializer(
-            author,
+        subscription = Subscription.objects.create(
+            subscriber=user,
+            author=author,
+        )
+        serializer = SubscribeSerializer(
+            subscription,
             context={'request': request},
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -196,8 +200,12 @@ class AddOrDeleteSubscription(APIView):
     def delete(self, request, pk):
         author = get_object_or_404(User, pk=pk)
         user = request.user
-        if user.subscribes.filter(pk=author.pk).exists():
-            user.subscribes.remove(author)
+        subscription = Subscription.objects.filter(
+            subscriber=user,
+            author=author,
+        )
+        if subscription.exists():
+            subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         data = {'errors': 'Такого пользователя нет в ваших подписках'}
         return Response(status=status.HTTP_400_BAD_REQUEST, data=data)

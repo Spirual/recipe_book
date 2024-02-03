@@ -14,12 +14,13 @@ from rest_framework.fields import (
 )
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import Serializer, ModelSerializer
+from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import (
     Tag,
     Ingredient,
     Recipe,
-    RecipeIngredient,
+    RecipeIngredient, Favorite, Subscription,
 )
 
 User = get_user_model()
@@ -42,10 +43,10 @@ class CustomUserSerializer(UserSerializer):
     def get_is_subscribed(self, obj):
         request = self.context['request']
         return (
-                request
-                and request.user.is_authenticated
-                and request.user.
-                subscribes.filter(pk=obj.pk).exists())
+            request
+            and request.user.is_authenticated
+            and request.user.subscribes.filter(author=obj).exists()
+        )
 
 
 class Base64ImageField(serializers.ImageField):
@@ -121,18 +122,18 @@ class RecipeReadSerializer(ModelSerializer):
     def get_is_favorited(self, obj):
         request = self.context['request']
         return (
-                request
-                and request.user.is_authenticated
-                and request.user.
-                favorites.filter(pk=obj.pk).exists())
+            request
+            and request.user.is_authenticated
+            and request.user.favorites.filter(recipe=obj).exists()
+        )
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context['request']
         return (
-                request
-                and request.user.is_authenticated
-                and request.user.
-                shopping_list.filter(pk=obj.pk).exists())
+            request
+            and request.user.is_authenticated
+            and request.user.shopping_list.filter(recipe=obj).exists()
+        )
 
 
 class WriteRecipeIngredientSerializer(ModelSerializer):
@@ -280,6 +281,7 @@ class SubscribedUserSerializer(CustomUserSerializer):
             'recipes',
             'recipes_count',
         )
+        model = User
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
@@ -295,3 +297,31 @@ class SubscribedUserSerializer(CustomUserSerializer):
         recipes = obj.recipes.all()[:recipes_limit]
         serializer = ShortRecipeSerializer(recipes, many=True)
         return serializer.data
+
+
+class SubscribeSerializer(ModelSerializer):
+
+    class Meta:
+        fields = ('subscriber', 'author',)
+        model = Subscription
+        validators = [
+            UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('subscriber', 'author'),
+                message='Вы уже подписаны на этого пользователя.',
+            )
+        ]
+
+    def validate_subscriber(self, data):
+        request = self.context.get('request')
+        user = request.user
+        if user == data:
+            raise ValidationError(
+                'Нельзя подписаться на самого себя!')
+        return data
+
+    def to_representation(self, instance):
+        return SubscribedUserSerializer(
+            instance.subscriber,
+            context={'request': self.context.get('request')}
+        ).data
