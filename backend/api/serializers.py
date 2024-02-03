@@ -2,6 +2,7 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+from django.db import transaction
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -207,15 +208,21 @@ class RecipeWriteSerializer(ModelSerializer):
         validated_data['author'] = author
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
+
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        for ingredient in ingredients:
-            ingredient_id = ingredient['ingredient'].id
-            RecipeIngredient.objects.create(
+
+        recipe_ingredients = [
+            RecipeIngredient(
                 recipe=recipe,
-                ingredient_id=ingredient_id,
+                ingredient=ingredient['ingredient'],
                 amount=ingredient['amount'],
             )
+            for ingredient in ingredients
+        ]
+        with transaction.atomic():
+            RecipeIngredient.objects.bulk_create(recipe_ingredients)
+
         return recipe
 
     def update(self, instance, validated_data):
@@ -228,13 +235,16 @@ class RecipeWriteSerializer(ModelSerializer):
 
         if ingredients:
             instance.ingredients.all().delete()
-            for ingredient in ingredients:
-                ingredient_id = ingredient['ingredient'].id
-                RecipeIngredient.objects.create(
+            recipe_ingredients = [
+                RecipeIngredient(
                     recipe=instance,
-                    ingredient_id=ingredient_id,
+                    ingredient=ingredient['ingredient'],
                     amount=ingredient['amount'],
                 )
+                for ingredient in ingredients
+            ]
+            with transaction.atomic():
+                RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
         instance = super().update(instance, validated_data)
 
