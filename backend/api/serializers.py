@@ -252,11 +252,24 @@ class RecipeWriteSerializer(ModelSerializer):
         return instance
 
 
-class FavoriteSerializer(Serializer):
-    id = IntegerField()
-    name = CharField()
-    image = ImageField()
-    cooking_time = IntegerField()
+class FavoriteSerializer(ModelSerializer):
+
+    class Meta:
+        model = Favorite
+        fields = ('user', 'recipe')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('user', 'recipe'),
+                message='Рецепт уже добавлен!',
+            )
+        ]
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        return ShortRecipeSerializer(
+            instance.recipe, context={'request': request}
+        ).data
 
 
 class ShortRecipeSerializer(ModelSerializer):
@@ -312,7 +325,7 @@ class SubscribeSerializer(ModelSerializer):
             )
         ]
 
-    def validate_subscriber(self, data):
+    def validate_author(self, data):
         request = self.context.get('request')
         user = request.user
         if user == data:

@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db.models import Sum, F
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -67,23 +68,15 @@ class RecipeViewSet(ModelViewSet):
     def favorite(self, request, pk=None):
         user = request.user
         if request.method == 'POST':
-            recipe = Recipe.objects.filter(pk=pk).first()
-            if not recipe:
-                return Response(
-                    {'errors': 'Рецепт с таким ID в базе не найден!'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            if Favorite.objects.filter(
-                recipe=recipe,
-                user=user,
-            ).exists():
-                return Response(
-                    {'errors': 'Рецепт уже добавлен!'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            favorite = Favorite.objects.create(recipe=recipe, user=user)
-            serializer = FavoriteSerializer(favorite)
+            data = {'user': user.pk, 'recipe': pk}
+            serializer = FavoriteSerializer(
+                context={'request': request},
+                data=data
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         elif request.method == 'DELETE':
             recipe = get_object_or_404(Recipe, pk=pk)
             favorite = Favorite.objects.filter(recipe=recipe, user=user)
@@ -167,7 +160,8 @@ class Subscriptions(APIView):
     permission_classes = (IsAuthorOrReadOnlyPermission,)
 
     def get(self, request):
-        subscribes = User.objects.filter(subscribers__subscriber=self.request.user)
+        subscribes = User.objects.filter(
+            subscribers__subscriber=self.request.user)
         paginator = PageLimitPagination()
         page = paginator.paginate_queryset(subscribes, request)
         serializer = SubscribedUserSerializer(
@@ -184,15 +178,14 @@ class AddOrDeleteSubscription(APIView):
     def post(self, request, pk):
         author = get_object_or_404(User, pk=pk)
         user = request.user
+        data = {'subscriber': user.pk, 'author': author.pk}
 
-        subscription = Subscription.objects.create(
-            subscriber=user,
-            author=author,
-        )
         serializer = SubscribeSerializer(
-            subscription,
             context={'request': request},
+            data=data
         )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, pk):
