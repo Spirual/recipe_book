@@ -13,6 +13,5 @@ class IsAuthorOrReadOnlyPermission(IsAuthenticatedOrReadOnly):
 class AllowAnyExceptMe(BasePermission):
     def has_permission(self, request, view):
         return (
-                '/users/me/' not in request.path or
-                request.user.is_authenticated
+            '/users/me/' not in request.path or request.user.is_authenticated
         )

@@ -182,7 +182,7 @@ class Subscription(models.Model):
         ]
 
     def __str__(self):
-        return f"Подписка {self.subscriber} на {self.author}."
+        return f'Подписка {self.subscriber} на {self.author}.'
 
 
 class Favorite(models.Model):
@@ -191,7 +191,6 @@ class Favorite(models.Model):
         on_delete=models.CASCADE,
         related_name='favorites',
         verbose_name='Пользователь',
-
     )
     recipe = models.ForeignKey(
         Recipe,

@@ -4,7 +4,8 @@ exclude = [
     ".git",
     ".venv",
     "tests",
-    ".github"
+    ".github",
+    "migrations",
 ]
 
 line-length = 79

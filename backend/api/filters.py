@@ -27,7 +27,9 @@ class RecipesFilterBackend(FilterSet):
         user = self.request.user
         is_in_shopping_cart = value
         if user.is_authenticated and is_in_shopping_cart:
-            return queryset.filter(id__in=user.shopping_list.values('recipe__id'))
+            return queryset.filter(
+                id__in=user.shopping_list.values('recipe__id')
+            )
 
         return queryset
 

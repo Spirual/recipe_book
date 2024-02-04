@@ -15,7 +15,10 @@ from recipes.models import (
     Tag,
     Ingredient,
     Recipe,
-    RecipeIngredient, Favorite, Subscription, ShoppingList,
+    RecipeIngredient,
+    Favorite,
+    Subscription,
+    ShoppingList,
 )
 
 User = get_user_model()
@@ -133,8 +136,7 @@ class RecipeReadSerializer(ModelSerializer):
 
 class WriteRecipeIngredientSerializer(ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
-        queryset=Ingredient.objects.all(),
-        source='ingredient'
+        queryset=Ingredient.objects.all(), source='ingredient'
     )
 
     class Meta:
@@ -189,8 +191,7 @@ class RecipeWriteSerializer(ModelSerializer):
         ingredient_list = []
         for ingredient in ingredients:
             ingredient_id = ingredient['ingredient'].id
-            db_ingredient = Ingredient.objects.filter(
-                id=ingredient_id).first()
+            db_ingredient = Ingredient.objects.filter(id=ingredient_id).first()
 
             if ingredient in ingredient_list:
                 error = f'Ингридиент {db_ingredient.name} повторяется!'
@@ -248,7 +249,6 @@ class RecipeWriteSerializer(ModelSerializer):
 
 
 class FavoriteSerializer(ModelSerializer):
-
     class Meta:
         model = Favorite
         fields = ('user', 'recipe')
@@ -268,7 +268,6 @@ class FavoriteSerializer(ModelSerializer):
 
 
 class ShoppingListSerializer(ModelSerializer):
-
     class Meta:
         model = ShoppingList
         fields = ('user', 'recipe')
@@ -328,9 +327,11 @@ class SubscribedUserSerializer(CustomUserSerializer):
 
 
 class SubscribeSerializer(ModelSerializer):
-
     class Meta:
-        fields = ('subscriber', 'author',)
+        fields = (
+            'subscriber',
+            'author',
+        )
         model = Subscription
         validators = [
             UniqueTogetherValidator(
@@ -344,12 +345,11 @@ class SubscribeSerializer(ModelSerializer):
         request = self.context.get('request')
         user = request.user
         if user == data:
-            raise ValidationError(
-                'Нельзя подписаться на самого себя!')
+            raise ValidationError('Нельзя подписаться на самого себя!')
         return data
 
     def to_representation(self, instance):
         return SubscribedUserSerializer(
             instance.subscriber,
-            context={'request': self.context.get('request')}
+            context={'request': self.context.get('request')},
         ).data

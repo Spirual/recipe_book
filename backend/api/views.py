@@ -30,7 +30,8 @@ from recipes.models import (
     Recipe,
     Favorite,
     Subscription,
-    RecipeIngredient, ShoppingList,
+    RecipeIngredient,
+    ShoppingList,
 )
 
 User = get_user_model()
@@ -72,8 +73,7 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         data = {'user': user.pk, 'recipe': pk}
         serializer = FavoriteSerializer(
-            context={'request': request},
-            data=data
+            context={'request': request}, data=data
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -95,9 +95,8 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
 
         aggregated_shopping_list = (
-            RecipeIngredient.objects.filter(
-                recipe__shopping_list__user=user
-            ).values('ingredient__name', 'ingredient__measurement_unit')
+            RecipeIngredient.objects.filter(recipe__shopping_list__user=user)
+            .values('ingredient__name', 'ingredient__measurement_unit')
             .annotate(
                 amount=Sum('amount'),
                 name=F('ingredient__name'),
@@ -111,7 +110,8 @@ class RecipeViewSet(ModelViewSet):
 
         response = HttpResponse(shopping_cart_text, content_type='text/plain')
         response[
-            'Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
+            'Content-Disposition'
+        ] = 'attachment; filename="shopping_list.txt"'
 
         return response
 
@@ -124,8 +124,7 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         data = {'user': user.pk, 'recipe': pk}
         serializer = ShoppingListSerializer(
-            context={'request': request},
-            data=data
+            context={'request': request}, data=data
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -148,7 +147,8 @@ class Subscriptions(APIView):
 
     def get(self, request):
         subscribes = User.objects.filter(
-            subscribers__subscriber=self.request.user)
+            subscribers__subscriber=self.request.user
+        )
         paginator = PageLimitPagination()
         page = paginator.paginate_queryset(subscribes, request)
         serializer = SubscribedUserSerializer(
@@ -168,8 +168,7 @@ class AddOrDeleteSubscription(APIView):
         data = {'subscriber': user.pk, 'author': author.pk}
 
         serializer = SubscribeSerializer(
-            context={'request': request},
-            data=data
+            context={'request': request}, data=data
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
