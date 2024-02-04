@@ -104,7 +104,7 @@ POST /api/auth/token/login/
 -   "email": "string"
 } 
 ```  
-* Получение списка произведений  
+* Получение списка рецептов  
 ```  
 GET /api/recipes/ 
 {
@@ -147,3 +147,7 @@ GET /api/recipes/
 ```
 Подробная документация по API проекта:   
 api/docs/redoc.html
+
+## Автор:
+
+- [Владимир Фатеев](https://github.com/Spirual/) 
