@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Sum, F
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django_filters.rest_framework import DjangoFilterBackend
@@ -25,7 +26,7 @@ from api.serializers import (
 from recipes.models import (
     Tag,
     Ingredient,
-    Recipe, Favorite, Subscription, ShoppingList,
+    Recipe, Favorite, Subscription, ShoppingList, RecipeIngredient,
 )
 
 User = get_user_model()
@@ -95,20 +96,17 @@ class RecipeViewSet(ModelViewSet):
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
         user = request.user
-        shopping_list = user.shopping_list.all()
 
-        aggregated_shopping_list = {}
-        for shopping_item in shopping_list:
-            for recipe_ingredient in shopping_item.recipe.ingredients.all():
-                ingredient_name = recipe_ingredient.ingredient.name
-                if ingredient_name in aggregated_shopping_list:
-                    aggregated_shopping_list[ingredient_name][
-                        'amount'] += recipe_ingredient.amount
-                else:
-                    aggregated_shopping_list[ingredient_name] = {
-                        'amount': recipe_ingredient.amount,
-                        'measurement_unit': recipe_ingredient.ingredient.measurement_unit,
-                    }
+        aggregated_shopping_list = (
+            RecipeIngredient.objects.filter(
+                recipe__shopping_list__user=user
+            ).values('ingredient__name', 'ingredient__measurement_unit')
+            .annotate(
+                amount=Sum('amount'),
+                name=F('ingredient__name'),
+                measurement_unit=F('ingredient__measurement_unit'),
+            )
+        )
 
         context = {'shopping_list': aggregated_shopping_list}
 

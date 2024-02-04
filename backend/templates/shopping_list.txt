@@ -1,3 +1,2 @@
-{% for ingredient, data in shopping_list.items %}
-{{ ingredient }} ({{ data.measurement_unit }}) — {{ data.amount }}
+{% for ingredient in shopping_list %}{{ ingredient.name }} ({{ ingredient.measurement_unit }}) — {{ ingredient.amount }}
 {% endfor %}
