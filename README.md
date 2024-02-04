@@ -5,7 +5,7 @@
 Проект доступен по адресу https://foodgr.myftp.org/
 
 ## Стек:  
-Django 3.2, Djoser, Python 3.11, DRF, PostgreSQL
+Django 3.2, Djoser, Python 3.11, DRF, PostgreSQL, GitHub, GitHub Actions
 ## Как запустить проект  
 Клонировать репозиторий и перейти в него в командной строке:  
 `git clone url.git`  
@@ -21,11 +21,64 @@ Django 3.2, Djoser, Python 3.11, DRF, PostgreSQL
 ### Выполнить миграции:  
 `python3 manage.py migrate`  
   
-### При необходимости наполинить базу данных ингридиентами и тегами(:  
+### При необходимости наполнить базу данных ингредиентами и тегами(:  
 `python3 manage.py load_data`  
   
 ### Запустить проект:  
 `python3 manage.py runserver`
+
+### Развернуть проект на удаленном сервере:
+
+-   Выполните вход на свой удаленный сервер
+    
+-   Установите docker на сервер:
+    Поочерёдно выполните на сервере команды для установки Docker и Docker Compose для Linux. Наберитесь терпения: установка займёт некоторое время.
+
+```
+sudo apt update
+sudo apt install curl
+curl -fSL https://get.docker.com -o get-docker.sh
+sudo sh ./get-docker.sh
+sudo apt install docker-compose-plugin
+```
+-   На сервере отредактируйте файл nginx.conf 
+```
+sudo nano /etc/nginx/sites-enabled/default
+```
+и в строке server впишите ваш доменный адрес и ip
+```
+server { ...  <ваш-ip> <ваш-домен>; ... }
+```
+и не забудьте проверить и перезагрузить конфиг файл
+```
+sudo nginx -t
+sudo systemctl reload nginx
+```
+-   На сервере создайте директории foodgram/infra и создайте там .env файл и впишите значения для переменных:
+   ```
+	POSTGRES_USER=  
+	POSTGRES_PASSWORD=  
+	POSTGRES_DB=  
+	POSTGRES_HOST=  
+	POSTGRES_PORT=  
+	SECRET_KEY=
+	DJANGO_DEBUG= 
+	DJANGO_ALLOWED_HOSTS=
+```
+    
+-  Проект настроен на автоматизацию деплоя с GitHub Actions. Деплой происходит при push на сервер GitHub в ветку master. Для работы с Workflow добавьте в Secrets GitHub переменные окружения для работы:
+```
+	DOCKER_PASSWORD=<пароль от DockerHub>
+	DOCKER_USERNAME=<имя пользователя>
+
+	USER=<username для подключения к серверу>
+	HOST=<IP сервера>
+	PASSPHRASE=<пароль для сервера, если он установлен>
+	SSH_KEY=<ваш SSH ключ (для получения команда: cat ~/.ssh/id_rsa)>
+
+	TELEGRAM_TO=<ID чата, в который придет сообщение>
+	TELEGRAM_TOKEN=<токен вашего бота>
+```
 ## Примеры  
 * Регистрация пользователя  
 ```  

@@ -175,7 +175,7 @@ class RecipeWriteSerializer(ModelSerializer):
         tags = data.get('tags')
         ingredients = data.get('ingredients')
 
-        if not tags or len(tags) == 0:
+        if not tags:
             raise ValidationError({'tags': 'Выберите хотя-бы один тег!'})
         tags_list = []
         for tag in tags:
@@ -184,17 +184,16 @@ class RecipeWriteSerializer(ModelSerializer):
             else:
                 raise ValidationError({'tags': 'Теги не могут повторятся!'})
 
-        if not ingredients or len(ingredients) == 0:
+        if not ingredients:
             raise ValidationError(
                 {'ingredients': 'Рецепт не может быть без ингредиентов!'}
             )
         ingredient_list = []
         for ingredient in ingredients:
-            ingredient_id = ingredient['ingredient'].id
-            db_ingredient = Ingredient.objects.filter(id=ingredient_id).first()
+            ingredient_name = ingredient['ingredient'].name
 
             if ingredient in ingredient_list:
-                error = f'Ингридиент {db_ingredient.name} повторяется!'
+                error = f'Ингридиент {ingredient_name} повторяется!'
                 raise ValidationError({'ingredients': error})
 
             ingredient_list.append(ingredient)
@@ -209,16 +208,7 @@ class RecipeWriteSerializer(ModelSerializer):
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
 
-        recipe_ingredients = [
-            RecipeIngredient(
-                recipe=recipe,
-                ingredient=ingredient['ingredient'],
-                amount=ingredient['amount'],
-            )
-            for ingredient in ingredients
-        ]
-        with transaction.atomic():
-            RecipeIngredient.objects.bulk_create(recipe_ingredients)
+        self.process_recipe_ingredients(recipe, ingredients)
 
         return recipe
 
@@ -226,26 +216,29 @@ class RecipeWriteSerializer(ModelSerializer):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
 
-        if tags:
-            instance.tags.clear()
-            instance.tags.set(tags)
+        instance.tags.clear()
+        instance.tags.set(tags)
 
-        if ingredients:
-            instance.ingredients.all().delete()
-            recipe_ingredients = [
-                RecipeIngredient(
-                    recipe=instance,
-                    ingredient=ingredient['ingredient'],
-                    amount=ingredient['amount'],
-                )
-                for ingredient in ingredients
-            ]
-            with transaction.atomic():
-                RecipeIngredient.objects.bulk_create(recipe_ingredients)
+        instance.ingredients.all().delete()
+
+        self.process_recipe_ingredients(instance, ingredients)
 
         instance = super().update(instance, validated_data)
 
         return instance
+
+    @transaction.atomic
+    def process_recipe_ingredients(self, recipe_instance, ingredients):
+        recipe_ingredients = [
+            RecipeIngredient(
+                recipe=recipe_instance,
+                ingredient=ingredient['ingredient'],
+                amount=ingredient['amount'],
+            )
+            for ingredient in ingredients
+        ]
+
+        RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
 
 class FavoriteSerializer(ModelSerializer):

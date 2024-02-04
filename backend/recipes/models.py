@@ -4,7 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import Q, F
 
-from api import constants
+from foodgram import constants
 
 User = get_user_model()
 

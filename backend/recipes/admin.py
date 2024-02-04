@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from api import constants
+from foodgram import constants
 from recipes.models import (
     Tag,
     Ingredient,
