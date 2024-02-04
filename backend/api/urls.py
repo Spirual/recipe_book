@@ -20,4 +20,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('users/subscriptions/', Subscriptions.as_view()),
     path('users/<int:pk>/subscribe/', AddOrDeleteSubscription.as_view()),
+    path('', include('djoser.urls')),
+    path('auth/', include('djoser.urls.authtoken')),
 ]

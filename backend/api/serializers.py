@@ -6,21 +6,16 @@ from django.db import transaction
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import (
-    IntegerField,
-    SerializerMethodField,
-    CharField,
-    ImageField,
-)
+from rest_framework.fields import SerializerMethodField
 from rest_framework.relations import PrimaryKeyRelatedField
-from rest_framework.serializers import Serializer, ModelSerializer
+from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import (
     Tag,
     Ingredient,
     Recipe,
-    RecipeIngredient, Favorite, Subscription,
+    RecipeIngredient, Favorite, Subscription, ShoppingList,
 )
 
 User = get_user_model()
@@ -256,6 +251,26 @@ class FavoriteSerializer(ModelSerializer):
 
     class Meta:
         model = Favorite
+        fields = ('user', 'recipe')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('user', 'recipe'),
+                message='Рецепт уже добавлен!',
+            )
+        ]
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        return ShortRecipeSerializer(
+            instance.recipe, context={'request': request}
+        ).data
+
+
+class ShoppingListSerializer(ModelSerializer):
+
+    class Meta:
+        model = ShoppingList
         fields = ('user', 'recipe')
         validators = [
             UniqueTogetherValidator(
