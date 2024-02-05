@@ -192,13 +192,14 @@ class RecipeWriteSerializer(ModelSerializer):
         for ingredient in ingredients:
             ingredient_name = ingredient['ingredient'].name
 
-            if ingredient in ingredient_list:
+            if ingredient_name in ingredient_list:
                 error = f'Ингридиент {ingredient_name} повторяется!'
                 raise ValidationError({'ingredients': error})
 
-            ingredient_list.append(ingredient)
+            ingredient_list.append(ingredient_name)
         return data
 
+    @transaction.atomic
     def create(self, validated_data):
         author = self.context['request'].user
         validated_data['author'] = author
@@ -212,6 +213,7 @@ class RecipeWriteSerializer(ModelSerializer):
 
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
